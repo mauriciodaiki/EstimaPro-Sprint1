@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { ref } from "vue";
 
 // ⚠️ Sustituye estos valores por los de tu proyecto Firebase (Console > Project settings > Web app)
 const firebaseConfig = {
@@ -17,3 +18,22 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+export const authUser = ref(null);
+export const authReady = ref(false);
+
+let resolveAuthReady;
+const readyPromise = new Promise((resolve) => {
+  resolveAuthReady = resolve;
+});
+
+onAuthStateChanged(auth, (user) => {
+  authUser.value = user;
+
+  if (!authReady.value) {
+    authReady.value = true;
+    resolveAuthReady();
+  }
+});
+
+export const waitForAuthInit = () => readyPromise;

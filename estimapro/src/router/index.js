@@ -2,12 +2,24 @@ import { createRouter, createWebHistory } from "vue-router";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Dashboard from "../views/Dashboard.vue";
-import { auth } from "../firebase/firebase";
+import { useAuth } from "../composables/useAuth";
+
+const { user, waitForAuthInit } = useAuth();
 
 const routes = [
   { path: "/", redirect: "/login" },
-  { path: "/login", name: "Login", component: Login },
-  { path: "/register", name: "Register", component: Register },
+  {
+    path: "/login",
+    name: "Login",
+    component: Login,
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/register",
+    name: "Register",
+    component: Register,
+    meta: { guestOnly: true },
+  },
   {
     path: "/dashboard",
     name: "Dashboard",
@@ -21,15 +33,21 @@ const router = createRouter({
   routes,
 });
 
-// Guard: protege rutas con requiresAuth
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to) => {
+  await waitForAuthInit();
+
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
-  const user = auth.currentUser;
+  const guestOnly = to.matched.some((r) => r.meta.guestOnly);
 
-  // Nota: auth.currentUser a veces viene null al recargar; para Sprint 1 basta esto.
-  if (requiresAuth && !user) return next("/login");
+  if (requiresAuth && !user.value) {
+    return "/login";
+  }
 
-  next();
+  if (guestOnly && user.value) {
+    return "/dashboard";
+  }
+
+  return true;
 });
 
 export default router;
