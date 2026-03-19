@@ -1,16 +1,85 @@
 <template>
-  <div style="padding: 24px;">
-    <h1>Dashboard</h1>
-    <p>Sesión iniciada correctamente.</p>
+  <div style="padding: 24px; max-width: 980px; margin: 0 auto; color: #e5e7eb;">
+    <div
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      "
+    >
+      <div>
+        <h1 style="margin: 0; color: #f8fafc;">Dashboard</h1>
+        <p style="margin: 6px 0 0; color: #cbd5e1;">Gestiona tus estimaciones en un solo lugar.</p>
+      </div>
+      <button
+        @click="handleLogout"
+        :disabled="logoutLoading"
+        style="
+          background: #b42318;
+          color: white;
+          border: none;
+          font-weight: 600;
+          padding: 10px 14px;
+        "
+      >
+        {{ logoutLoading ? "Cerrando sesión..." : "Cerrar sesión" }}
+      </button>
+    </div>
 
-    <p v-if="userEmail"><strong>Usuario:</strong> {{ userEmail }}</p>
+    <p
+      v-if="userEmail"
+      style="
+        margin: 0 0 14px;
+        background: #f5f7ff;
+        border: 1px solid #d9e0ff;
+        border-radius: 8px;
+        padding: 10px 12px;
+      "
+    >
+      <strong>Usuario:</strong> {{ userEmail }}
+    </p>
 
-    <button @click="handleLogout" :disabled="logoutLoading" style="margin-top: 16px;">
-      {{ logoutLoading ? "Cerrando sesión..." : "Cerrar sesión" }}
-    </button>
-
-    <p v-if="logoutError" style="color: red; margin-top: 12px;">{{ logoutError }}</p>
-    <p v-if="crudError" style="color: red; margin-top: 12px;">{{ crudError }}</p>
+    <p
+      v-if="successMessage"
+      style="
+        margin: 0 0 12px;
+        color: #155724;
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 10px 12px;
+      "
+    >
+      {{ successMessage }}
+    </p>
+    <p
+      v-if="logoutError"
+      style="
+        margin: 0 0 12px;
+        color: #721c24;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 10px 12px;
+      "
+    >
+      {{ logoutError }}
+    </p>
+    <p
+      v-if="crudError"
+      style="
+        margin: 0 0 12px;
+        color: #721c24;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 10px 12px;
+      "
+    >
+      {{ crudError }}
+    </p>
 
     <EstimationForm
       :model-value="activeEstimation"
@@ -54,6 +123,7 @@ const deleteLoadingId = ref("");
 const logoutLoading = ref(false);
 const logoutError = ref("");
 const crudError = ref("");
+const successMessage = ref("");
 
 const userEmail = computed(() => user.value?.email ?? "");
 const activeEstimation = computed(
@@ -132,12 +202,15 @@ const handleSaveEstimation = async (formData) => {
 
   saveLoading.value = true;
   crudError.value = "";
+  successMessage.value = "";
 
   try {
     if (editingId.value) {
       await updateEstimation(editingId.value, user.value.uid, formData);
+      successMessage.value = "Estimación actualizada correctamente.";
     } else {
       await createEstimation(user.value.uid, formData);
+      successMessage.value = "Estimación creada correctamente.";
     }
 
     editingId.value = "";
@@ -155,14 +228,21 @@ const startEditing = (id) => {
 
 const cancelEditing = () => {
   editingId.value = "";
+  successMessage.value = "Edición cancelada.";
 };
 
 const handleDeleteEstimation = async (id) => {
   if (!user.value?.uid) return;
   if (deleteLoadingId.value) return;
 
+  const estimation = estimations.value.find((item) => item.id === id);
+  const label = estimation?.projectName || estimation?.clientName || "esta estimación";
+  const confirmed = window.confirm(`¿Deseas eliminar ${label}? Esta acción no se puede deshacer.`);
+  if (!confirmed) return;
+
   deleteLoadingId.value = id;
   crudError.value = "";
+  successMessage.value = "";
 
   try {
     await deleteEstimation(id);
@@ -172,6 +252,7 @@ const handleDeleteEstimation = async (id) => {
     }
 
     await loadEstimations();
+    successMessage.value = "Estimación eliminada correctamente.";
   } catch (e) {
     crudError.value = getCrudErrorMessage(e?.code, "delete");
   } finally {
@@ -183,6 +264,7 @@ const handleLogout = async () => {
   if (logoutLoading.value) return;
 
   logoutError.value = "";
+  successMessage.value = "";
   logoutLoading.value = true;
 
   try {

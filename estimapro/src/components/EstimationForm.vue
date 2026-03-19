@@ -1,16 +1,37 @@
 <template>
-  <div style="border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-top: 20px;">
-    <h2 style="margin-top: 0;">{{ isEditing ? "Editar estimación" : "Nueva estimación" }}</h2>
+  <div
+    style="
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 20px;
+      background: #1f2937;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      color: #e5e7eb;
+    "
+  >
+    <h2 style="margin: 0;">{{ isEditing ? "Editar estimación" : "Nueva estimación" }}</h2>
+    <p style="margin: 6px 0 14px; color: #cbd5e1; font-size: 14px;">
+      Completa los datos principales para guardar la estimación.
+    </p>
 
     <form @submit.prevent="handleSubmit">
       <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Cliente</label>
         <input
           v-model="form.clientName"
           type="text"
           placeholder="Cliente"
           :disabled="loading"
           @blur="validateField('clientName')"
-          style="width: 100%;"
+          style="
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+          "
         />
         <p v-if="errors.clientName" style="color: red; margin: 6px 0 0;">
           {{ errors.clientName }}
@@ -18,13 +39,21 @@
       </div>
 
       <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Proyecto</label>
         <input
           v-model="form.projectName"
           type="text"
           placeholder="Proyecto"
           :disabled="loading"
           @blur="validateField('projectName')"
-          style="width: 100%;"
+          style="
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+          "
         />
         <p v-if="errors.projectName" style="color: red; margin: 6px 0 0;">
           {{ errors.projectName }}
@@ -32,6 +61,7 @@
       </div>
 
       <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Monto</label>
         <input
           v-model="form.amount"
           type="number"
@@ -40,7 +70,14 @@
           placeholder="Monto"
           :disabled="loading"
           @blur="validateField('amount')"
-          style="width: 100%;"
+          style="
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+          "
         />
         <p v-if="errors.amount" style="color: red; margin: 6px 0 0;">
           {{ errors.amount }}
@@ -48,13 +85,21 @@
       </div>
 
       <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Descripción</label>
         <textarea
           v-model="form.description"
           placeholder="Descripción"
           :disabled="loading"
           @blur="validateField('description')"
           rows="3"
-          style="width: 100%;"
+          style="
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+          "
         />
         <p v-if="errors.description" style="color: red; margin: 6px 0 0;">
           {{ errors.description }}
@@ -62,10 +107,32 @@
       </div>
 
       <div style="display: flex; gap: 8px;">
-        <button type="submit" :disabled="loading">
+        <button
+          type="submit"
+          :disabled="loading"
+          style="
+            background: #175cd3;
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 10px 14px;
+          "
+        >
           {{ loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear" }}
         </button>
-        <button v-if="isEditing" type="button" @click="emit('cancel')" :disabled="loading">
+        <button
+          v-if="isEditing"
+          type="button"
+          @click="emit('cancel')"
+          :disabled="loading"
+          style="
+            background: #f5f5f5;
+            color: #111827;
+            border: 1px solid #cbd5e1;
+            font-weight: 600;
+            padding: 10px 14px;
+          "
+        >
           Cancelar edición
         </button>
       </div>
