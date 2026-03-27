@@ -146,8 +146,36 @@ const getLogoutErrorMessage = (code) => {
 };
 
 const getCrudErrorMessage = (code, action) => {
+  if (code === "app/missing-user-id") {
+    return "Tu sesión no está lista. Cierra sesión e inicia de nuevo.";
+  }
+
+  if (code === "app/missing-owner") {
+    return "Este registro no tiene userId. Debes corregirlo en Firestore para poder editar o eliminar.";
+  }
+
+  if (code === "not-found") {
+    return "La estimación ya no existe o fue eliminada en otra sesión.";
+  }
+
   if (code === "permission-denied") {
+    if (action === "load") {
+      return "No tienes permisos para leer estimaciones. Verifica reglas Firestore y que userId coincida con tu uid.";
+    }
+
+    if (action === "save") {
+      return "No tienes permisos para guardar cambios en esta estimación.";
+    }
+
+    if (action === "delete") {
+      return "No tienes permisos para eliminar esta estimación.";
+    }
+
     return "No tienes permisos para esta acción.";
+  }
+
+  if (code === "failed-precondition" && action === "load") {
+    return "La consulta requiere índice o no cumple reglas de Firestore.";
   }
 
   if (code === "unavailable" || code === "auth/network-request-failed") {
@@ -206,6 +234,13 @@ const handleSaveEstimation = async (formData) => {
 
   try {
     if (editingId.value) {
+      const current = estimations.value.find((item) => item.id === editingId.value);
+      if (!current) {
+        throw Object.assign(new Error("No se encontró la estimación a editar."), {
+          code: "not-found",
+        });
+      }
+
       await updateEstimation(editingId.value, user.value.uid, formData);
       successMessage.value = "Estimación actualizada correctamente.";
     } else {
@@ -245,7 +280,7 @@ const handleDeleteEstimation = async (id) => {
   successMessage.value = "";
 
   try {
-    await deleteEstimation(id);
+    await deleteEstimation(id, user.value.uid);
 
     if (editingId.value === id) {
       editingId.value = "";
