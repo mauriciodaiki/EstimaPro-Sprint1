@@ -118,6 +118,16 @@ const exportStatusClass = computed(() =>
   exportStatus.value === "success" ? "success" : "error"
 );
 
+const logFirebaseClientError = (operation, error, context = {}) => {
+  console.error(`[Dashboard][${operation}]`, {
+    code: error?.code ?? "unknown",
+    message: error?.message ?? "unknown",
+    name: error?.name ?? "unknown",
+    context,
+    fullError: error,
+  });
+};
+
 const resetForm = () => {
   formState.cliente = "";
   formState.proyecto = "";
@@ -127,41 +137,62 @@ const resetForm = () => {
 };
 
 const loadEstimaciones = async () => {
-  if (!userId.value) return;
+  const currentUid = auth.currentUser?.uid ?? "";
+  if (!currentUid) return;
+  if (userId.value && userId.value !== currentUid) {
+    console.warn("[Dashboard][loadEstimaciones] UID mismatch detectado", {
+      userIdState: userId.value,
+      currentUid,
+    });
+  }
+
+  userId.value = currentUid;
 
   isLoading.value = true;
   uiError.value = "";
 
   try {
-    estimaciones.value = await listEstimacionesByUser(userId.value);
+    estimaciones.value = await listEstimacionesByUser(currentUid);
   } catch (error) {
-    uiError.value = "No fue posible cargar las estimaciones.";
-    console.error(error);
+    uiError.value = `No fue posible cargar las estimaciones (${error?.code ?? "unknown"}).`;
+    logFirebaseClientError("loadEstimaciones", error, { userId: currentUid });
   } finally {
     isLoading.value = false;
   }
 };
 
 const handleSubmit = async (payload) => {
-  if (!userId.value) return;
+  const currentUid = auth.currentUser?.uid ?? "";
+  if (!currentUid) {
+    uiError.value = "Sesión inválida para guardar estimaciones.";
+    console.error("[Dashboard][handleSubmit] auth.currentUser.uid vacío");
+    return;
+  }
+
+  userId.value = currentUid;
 
   uiError.value = "";
 
   try {
+    const payloadWithUser = {
+      ...payload,
+      userId: currentUid,
+    };
+
     if (editingId.value) {
-      await updateEstimacion(editingId.value, payload);
+      await updateEstimacion(editingId.value, payloadWithUser);
     } else {
-      await createEstimacion({
-        ...payload,
-        userId: userId.value,
-      });
+      await createEstimacion(payloadWithUser);
     }
 
     await loadEstimaciones();
     cancelEdit();
   } catch (error) {
-    uiError.value = "No fue posible guardar la estimación.";
-    console.error(error);
+    uiError.value = `No fue posible guardar la estimación (${error?.code ?? "unknown"}).`;
+    logFirebaseClientError("handleSubmit", error, {
+      userId: currentUid,
+      editingId: editingId.value || null,
+    });
   }
 };
 
@@ -188,8 +219,8 @@ const handleRemove = async (estimacionId) => {
     await deleteEstimacion(estimacionId);
     await loadEstimaciones();
   } catch (error) {
-    uiError.value = "No fue posible eliminar la estimación.";
-    console.error(error);
+    uiError.value = `No fue posible eliminar la estimación (${error?.code ?? "unknown"}).`;
+    logFirebaseClientError("handleRemove", error, { estimacionId });
   }
 };
 
@@ -221,7 +252,9 @@ const handleExportCsv = () => {
   } catch (error) {
     exportStatus.value = "error";
     exportMessage.value = "No fue posible exportar el archivo CSV.";
-    console.error(error);
+    logFirebaseClientError("handleExportCsv", error, {
+      records: filteredEstimaciones.value.length,
+    });
   }
 };
 

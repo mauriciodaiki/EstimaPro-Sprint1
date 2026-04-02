@@ -13,6 +13,18 @@ const firebaseConfig = {
   measurementId: "G-1RH6474Q5E"
 };
 
+const requiredConfigKeys = ["apiKey", "authDomain", "projectId", "appId"];
+const missingConfigKeys = requiredConfigKeys.filter((key) => !firebaseConfig[key]);
+
+if (missingConfigKeys.length > 0) {
+  console.error("[Firebase][config] Faltan claves de configuración:", missingConfigKeys);
+} else {
+  console.info("[Firebase][config] Proyecto activo:", {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+  });
+}
+
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
