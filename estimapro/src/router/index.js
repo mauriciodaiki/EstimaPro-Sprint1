@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { onAuthStateChanged } from "firebase/auth";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Dashboard from "../views/Dashboard.vue";
@@ -21,15 +22,23 @@ const router = createRouter({
   routes,
 });
 
-// Guard: protege rutas con requiresAuth
-router.beforeEach((to, from, next) => {
+const getCurrentUser =
+  () =>
+    new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+
+router.beforeEach(async (to) => {
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
-  const user = auth.currentUser;
+  if (!requiresAuth) return true;
 
-  // Nota: auth.currentUser a veces viene null al recargar; para Sprint 1 basta esto.
-  if (requiresAuth && !user) return next("/login");
+  const user = auth.currentUser ?? (await getCurrentUser());
+  if (!user) return "/login";
 
-  next();
+  return true;
 });
 
 export default router;
