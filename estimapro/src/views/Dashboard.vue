@@ -5,7 +5,10 @@
         <h1>Dashboard de Estimaciones</h1>
         <p v-if="userEmail"><strong>Usuario:</strong> {{ userEmail }}</p>
       </div>
-      <button type="button" @click="handleLogout">Cerrar sesión</button>
+      <div class="topbar-actions">
+        <button type="button" @click="handleExportCsv">Exportar CSV</button>
+        <button type="button" @click="handleLogout">Cerrar sesión</button>
+      </div>
     </header>
 
     <section class="panel filters">
@@ -38,6 +41,7 @@
     </section>
 
     <p v-if="uiError" class="error">{{ uiError }}</p>
+    <p v-if="exportMessage" :class="exportStatusClass">{{ exportMessage }}</p>
     <p v-if="isLoading">Cargando...</p>
 
     <div class="content-grid">
@@ -69,6 +73,7 @@ import {
   updateEstimacion,
 } from "../services/estimacionesService";
 import { applyEstimationFilters } from "../utils/filters";
+import { exportEstimacionesCsv } from "../utils/exportCsv";
 import EstimationForm from "../components/EstimationForm.vue";
 import EstimationTable from "../components/EstimationTable.vue";
 
@@ -79,6 +84,8 @@ const userEmail = ref("");
 const isLoading = ref(false);
 const uiError = ref("");
 const editingId = ref("");
+const exportMessage = ref("");
+const exportStatus = ref("success");
 
 const estimaciones = ref([]);
 
@@ -107,6 +114,9 @@ const filteredEstimaciones = computed(() => {
   if (filtersError.value) return [];
   return applyEstimationFilters(estimaciones.value, filters);
 });
+const exportStatusClass = computed(() =>
+  exportStatus.value === "success" ? "success" : "error"
+);
 
 const resetForm = () => {
   formState.cliente = "";
@@ -189,6 +199,32 @@ const clearFilters = () => {
   filters.maxMonto = "";
 };
 
+const handleExportCsv = () => {
+  exportMessage.value = "";
+
+  if (filtersError.value) {
+    exportStatus.value = "error";
+    exportMessage.value = "Corrige los filtros antes de exportar.";
+    return;
+  }
+
+  if (filteredEstimaciones.value.length === 0) {
+    exportStatus.value = "error";
+    exportMessage.value = "No hay estimaciones visibles para exportar.";
+    return;
+  }
+
+  try {
+    exportEstimacionesCsv(filteredEstimaciones.value);
+    exportStatus.value = "success";
+    exportMessage.value = `CSV exportado con ${filteredEstimaciones.value.length} estimaciones.`;
+  } catch (error) {
+    exportStatus.value = "error";
+    exportMessage.value = "No fue posible exportar el archivo CSV.";
+    console.error(error);
+  }
+};
+
 const handleLogout = async () => {
   await signOut(auth);
   router.push("/login");
@@ -227,6 +263,11 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: start;
   gap: 12px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .panel {
@@ -270,6 +311,11 @@ input {
 .error {
   margin: 0;
   color: #b42318;
+}
+
+.success {
+  margin: 0;
+  color: #067647;
 }
 
 @media (max-width: 960px) {
