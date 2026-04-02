@@ -52,11 +52,14 @@
         @cancel="cancelEdit"
       />
 
-      <EstimationTable
-        :items="filteredEstimaciones"
-        @edit="startEdit"
-        @remove="handleRemove"
-      />
+      <div class="right-column">
+        <DashboardMetrics :items="filteredEstimaciones" />
+        <EstimationTable
+          :items="filteredEstimaciones"
+          @edit="startEdit"
+          @remove="handleRemove"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -74,6 +77,7 @@ import {
 } from "../services/estimacionesService";
 import { applyEstimationFilters } from "../utils/filters";
 import { exportEstimacionesCsv } from "../utils/exportCsv";
+import DashboardMetrics from "../components/DashboardMetrics.vue";
 import EstimationForm from "../components/EstimationForm.vue";
 import EstimationTable from "../components/EstimationTable.vue";
 
@@ -334,6 +338,11 @@ input {
   gap: 16px;
   grid-template-columns: 320px 1fr;
   align-items: start;
+}
+
+.right-column {
+  display: grid;
+  gap: 12px;
 }
 
 .filters-actions {
